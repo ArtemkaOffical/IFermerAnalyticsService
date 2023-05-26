@@ -1,0 +1,13 @@
+version: '3.4'
+
+services:
+  ifermeranalyticsservice:
+    image: ${DOCKER_REGISTRY-}ifermeranalyticsservice
+    build:
+      context: .
+      dockerfile: IFermerAnalyticsService/Dockerfile
+    environment:
+      BACK_HOST: "192.168.137.48"
+      RABBIT_HOST: "192.168.137.149"
+    ports:
+      - "8089:8089"
