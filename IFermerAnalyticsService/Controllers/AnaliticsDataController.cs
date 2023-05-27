@@ -16,7 +16,7 @@ namespace IFermerAnalyticsService.Controllers
     {
         private AnalyticsDbContext _analyticsDbContext;
         private IHttpClientFactory _httpClientFactory;
-      
+
 
         public AnaliticsDataController(AnalyticsDbContext analyticsDb, IHttpClientFactory httpClientFactory)
         {
@@ -29,7 +29,7 @@ namespace IFermerAnalyticsService.Controllers
         {
 
             List<TicketDto> tickets = new List<TicketDto>();
-            WebRequest.Get(_httpClientFactory, $"{Connections.URL}api/delivery/search/position?position="+position, (statusCode, response) =>
+            WebRequest.Get(_httpClientFactory, $"{Connections.URL}api/delivery/search/position?position=" + position, (statusCode, response) =>
             {
                 if (statusCode == 200)
                 {
@@ -38,11 +38,19 @@ namespace IFermerAnalyticsService.Controllers
             });
             var title = $"Количество товаров по категориям для области {position}";
             var bitmap = BitMapCreator.CreateCategoryBitMap(tickets, title);
+            return CreateAndReturnImageData(bitmap, tickets);
 
-            bitmap.Save("products.png", System.Drawing.Imaging.ImageFormat.Png);
+        }
+        private object CreateAndReturnImageData(Bitmap bitmap, object data)
+        {
+            bitmap.Save(data.ToString()+".png", System.Drawing.Imaging.ImageFormat.Png);
             MemoryStream ms = new MemoryStream();
             bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-            return new { bytes = ms.ToArray(), text = JsonConvert.SerializeObject(tickets, Formatting.Indented) };
+            return new
+            {
+                bytes = ms.ToArray(),
+                text = JsonConvert.SerializeObject(data, Formatting.Indented)
+            };
         }
 
         private DateTime GetDateFromUnix(long sec)
@@ -88,31 +96,26 @@ namespace IFermerAnalyticsService.Controllers
             {
                 return new { bytes = "", text = "" };
             }
-                bitmap.Save("users.png", System.Drawing.Imaging.ImageFormat.Png);
-            MemoryStream ms = new MemoryStream();
-            bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-            return new { bytes = ms.ToArray(), text = JsonConvert.SerializeObject(userResponses, Formatting.Indented) };
+
+            return CreateAndReturnImageData(bitmap, userResponses);
         }
 
         [HttpGet]
         [Route("GetProducts")]
         public ActionResult<object> GetProductsData()
         {
-            List<TicketDto>? products = new List<TicketDto>() ;
+            List<TicketDto>? products = new List<TicketDto>();
 
-        WebRequest.Get(_httpClientFactory, $"{Connections.URL}api/delivery/all", (statusCode, response) =>
-            {
-                if (statusCode == 200)
+            WebRequest.Get(_httpClientFactory, $"{Connections.URL}api/delivery/all", (statusCode, response) =>
                 {
-                    products = JsonConvert.DeserializeObject<List<TicketDto>>(response);
-                }
-            });
+                    if (statusCode == 200)
+                    {
+                        products = JsonConvert.DeserializeObject<List<TicketDto>>(response);
+                    }
+                });
 
             var bitmap = BitMapCreator.CreateCategoryBitMap(products, "Статистика по продажам товаров всех категорий");
-            bitmap.Save("usersd.png", System.Drawing.Imaging.ImageFormat.Png);
-            MemoryStream ms = new MemoryStream();
-            bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-            return new { bytes = ms.ToArray(), text = JsonConvert.SerializeObject(products, Formatting.Indented) };
+            return CreateAndReturnImageData(bitmap, products);
         }
     }
 }
