@@ -1,4 +1,5 @@
-﻿using IFermerAnalyticsService.RabbitMqService.Messages;
+﻿using IFermerAnalyticsService.Data;
+using IFermerAnalyticsService.RabbitMqService.Messages;
 using IFermerAnalyticsService.RabbitMqService.Messages.Inrefaces;
 
 using Newtonsoft.Json;
@@ -14,15 +15,17 @@ namespace IFermerAnalyticsService.RabbitMqService
     {
         private IConnection _connection;
         private IModel _channel;
+        private AnalyticsDbContext _context;
         private ConnectionFactory _factory;
 
         private string _qeueName = "queue";
 
-        public RabbitService() 
+        public RabbitService(AnalyticsDbContext analyticsDbContext) 
         {
+            _context = analyticsDbContext;
             _factory = new ConnectionFactory() 
             {
-                HostName =Environment.GetEnvironmentVariable("RABBIT_HOST"),
+                HostName = "192.168.137.149",
                 UserName = "username", 
                 Password = "password" 
             };
@@ -76,17 +79,17 @@ namespace IFermerAnalyticsService.RabbitMqService
             {
                 case Messages.TypeMessage.UPDATE:
                     {
-                        obj.Update();
+                        obj.Update(_context);
                         break;
                     }
                 case Messages.TypeMessage.ADD:
                     {
-                        obj.Add();
+                        obj.Add(_context);
                         break;
                     }
                 case Messages.TypeMessage.REMOVE:
                     {
-                        obj.Remove();
+                        obj.Remove(_context);
                         break;
                     }
             }

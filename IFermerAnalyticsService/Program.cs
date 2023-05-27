@@ -13,8 +13,8 @@ namespace IFermerAnalyticsService
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-            builder.Services.AddHostedService<RabbitService>();
-            builder.Services.AddScoped<RabbitService>();
+            //builder.Services.AddHostedService<RabbitService>();
+            //builder.Services.AddScoped<RabbitService>();
             builder.Services.AddHttpClient();
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -30,6 +30,7 @@ namespace IFermerAnalyticsService
             builder.Services.AddDbContext<AnalyticsDbContext>(options => options
                 .UseLazyLoadingProxies()
                 .UseNpgsql(builder.Configuration.GetConnectionString("DbContext")));
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

@@ -7,11 +7,11 @@ namespace IFermerAnalyticsService.Data
     {
         public AnalyticsDbContext(DbContextOptions<AnalyticsDbContext> opt) : base(opt)
         {
-            Database.EnsureCreated();
+          //  Database.EnsureCreated();
         }
 
-        DbSet<Product> Products { get; set; }
-        DbSet<Ticket> Tickets { get; set; }
+       public DbSet<Product> Products { get; set; }
+       public DbSet<Ticket> Tickets { get; set; }
 
 
     }

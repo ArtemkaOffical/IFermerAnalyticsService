@@ -5,11 +5,10 @@
       "launchBrowser": true,
       "launchUrl": "swagger",
       "environmentVariables": {
-        "BACK_HOST": "192.168.137.48",
-        "RABBIT_HOST": "192.168.137.149"
+        "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "http://localhost:5265"
+      "applicationUrl": ""
     },
     "https": {
       "commandName": "Project",

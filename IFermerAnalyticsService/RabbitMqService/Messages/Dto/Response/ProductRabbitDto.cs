@@ -1,4 +1,5 @@
-﻿using IFermerAnalyticsService.RabbitMqService.Messages.Inrefaces;
+﻿using IFermerAnalyticsService.Data;
+using IFermerAnalyticsService.RabbitMqService.Messages.Inrefaces;
 using System.Diagnostics;
 
 namespace IFermerAnalyticsService.RabbitMqService.Messages.Dto.Response
@@ -17,17 +18,17 @@ namespace IFermerAnalyticsService.RabbitMqService.Messages.Dto.Response
             TypeMessageName = this.GetType().Name;
         }
 
-        public void Add()
+        public void Add(AnalyticsDbContext analyticsDbContext)
         {
             Debug.Write("Add");
         }
 
-        public void Remove()
+        public void Remove(AnalyticsDbContext analyticsDbContext)
         {
             Debug.Write("Remove");
         }
 
-        public void Update()
+        public void Update(AnalyticsDbContext analyticsDbContext)
         {
             Debug.Write("Update");
         }

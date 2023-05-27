@@ -1,5 +1,7 @@
 ﻿using IFermerAnalyticsService.Data;
 using IFermerAnalyticsService.Data.Dto.Response;
+using IFermerAnalyticsService.Data.Models;
+using IFermerAnalyticsService.Settings;
 using IFermerAnalyticsService.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -14,6 +16,7 @@ namespace IFermerAnalyticsService.Controllers
     {
         private AnalyticsDbContext _analyticsDbContext;
         private IHttpClientFactory _httpClientFactory;
+      
 
         public AnaliticsDataController(AnalyticsDbContext analyticsDb, IHttpClientFactory httpClientFactory)
         {
@@ -22,78 +25,19 @@ namespace IFermerAnalyticsService.Controllers
         }
 
         [HttpGet]
-        public ActionResult<object> GetSalesData()
+        public ActionResult<object> GetSalesData(string position = "Рязань")
         {
-            List<TicketDto> tickets = new List<TicketDto>()
-            {
-                new TicketDto
-                {
-                    Product = new ProductDto(){
-                        DateRegistration = DateTime.Now,
-                        Category = "Da",
-                        Name = "gd",
-                        Position = "a"
-                    },
-                    DeliveryDate = DateTime.Now.AddDays(-2),
-                    Count = 50,
-                    DeliveryType = TypeCount.KG,
-                    Price = 800,
-                },
-                new TicketDto
-                {
-                    Product = new ProductDto(){
-                        DateRegistration = DateTime.Now,
-                        Category = "Da",
-                        Name = "gd",
-                        Position = "a"
-                    },
-                    DeliveryDate = DateTime.Now.AddDays(-3),
-                    Count = 510,
-                    DeliveryType = TypeCount.KG,
-                    Price = 4647,
-                },
-                new TicketDto
-                {
-                    Product = new ProductDto(){
-                        DateRegistration = DateTime.Now,
-                        Category = "Da",
-                        Name = "gd",
-                        Position = "a"
-                    },
-                    DeliveryDate = DateTime.Now.AddDays(-6),
-                    Count = 65,
-                    DeliveryType = TypeCount.KG,
-                    Price = 324,
-                },
-                new TicketDto
-                {
-                    Product = new ProductDto(){
-                        DateRegistration = DateTime.Now,
-                        Category = "Da",
-                        Name = "gd",
-                        Position = "a"
-                    },
-                    DeliveryDate = DateTime.Now.AddDays(-4),
-                    Count = 200,
-                    DeliveryType = TypeCount.KG,
-                    Price = 1200,
-                },
-                new TicketDto
-                {
-                    Product = new ProductDto(){
-                        DateRegistration = DateTime.Now,
-                        Category = "Da",
-                        Name = "gd",
-                        Position = "a"
-                    },
-                    DeliveryDate = DateTime.Now.AddDays(-5),
-                    Count = 300,
-                    DeliveryType = TypeCount.KG,
-                    Price = 1800,
-                },
-            };
 
-            var bitmap = BitMapCreator.CreateProductBitMap(tickets);
+            List<TicketDto> tickets = new List<TicketDto>();
+            WebRequest.Get(_httpClientFactory, $"{Connections.URL}api/delivery/search/position?position="+position, (statusCode, response) =>
+            {
+                if (statusCode == 200)
+                {
+                    tickets = JsonConvert.DeserializeObject<List<TicketDto>>(response);
+                }
+            });
+            var title = $"Количество товаров по категориям для области {position}";
+            var bitmap = BitMapCreator.CreateCategoryBitMap(tickets, title);
 
             bitmap.Save("products.png", System.Drawing.Imaging.ImageFormat.Png);
             MemoryStream ms = new MemoryStream();
@@ -103,7 +47,7 @@ namespace IFermerAnalyticsService.Controllers
 
         private DateTime GetDateFromUnix(long sec)
         {
-            return DateTimeOffset.FromUnixTimeSeconds(sec).DateTime.Date;
+            return DateTimeOffset.FromUnixTimeSeconds(sec).Date;
         }
 
         [HttpGet]
@@ -113,7 +57,7 @@ namespace IFermerAnalyticsService.Controllers
             Users users = new Users();
             List<UserDto> userResponses = new List<UserDto>();
 
-            WebRequest.Get(_httpClientFactory, $"http://{Environment.GetEnvironmentVariable("BACK_HOST")}:8080/api/auth/all", (statusCode, response) =>
+            WebRequest.Get(_httpClientFactory, $"{Connections.URL}api/auth/all", (statusCode, response) =>
             {
                 if (statusCode == 200)
                 {
@@ -130,8 +74,8 @@ namespace IFermerAnalyticsService.Controllers
             }
             else
             {
-                DateTime startTimes = DateTime.Parse(startTime);
-                DateTime endTimes = DateTime.Parse(endTime);
+                DateTime startTimes = DateTime.Parse(startTime).Date;
+                DateTime endTimes = DateTime.Parse(endTime).Date;
 
                 userResponses = users.UsersList
                    .Where(user => GetDateFromUnix(user.DateRegistration) >= startTimes && GetDateFromUnix(user.DateRegistration) <= endTimes)
@@ -139,14 +83,37 @@ namespace IFermerAnalyticsService.Controllers
                 title = $"Кол-во пользователей за период с {startTime} по {endTime}";
             }
 
-           var bitmap = BitMapCreator.CreateUsersBitMap(userResponses, title);
-
-            bitmap.Save("users.png", System.Drawing.Imaging.ImageFormat.Png);
+            var bitmap = BitMapCreator.CreateUsersBitMap(userResponses, title);
+            if (bitmap == null)
+            {
+                return new { bytes = "", text = "" };
+            }
+                bitmap.Save("users.png", System.Drawing.Imaging.ImageFormat.Png);
             MemoryStream ms = new MemoryStream();
             bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
             return new { bytes = ms.ToArray(), text = JsonConvert.SerializeObject(userResponses, Formatting.Indented) };
         }
 
+        [HttpGet]
+        [Route("GetProducts")]
+        public ActionResult<object> GetProductsData()
+        {
+            List<TicketDto>? products = new List<TicketDto>() ;
+
+        WebRequest.Get(_httpClientFactory, $"{Connections.URL}api/delivery/all", (statusCode, response) =>
+            {
+                if (statusCode == 200)
+                {
+                    products = JsonConvert.DeserializeObject<List<TicketDto>>(response);
+                }
+            });
+
+            var bitmap = BitMapCreator.CreateCategoryBitMap(products, "Статистика по продажам товаров всех категорий");
+            bitmap.Save("usersd.png", System.Drawing.Imaging.ImageFormat.Png);
+            MemoryStream ms = new MemoryStream();
+            bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+            return new { bytes = ms.ToArray(), text = JsonConvert.SerializeObject(products, Formatting.Indented) };
+        }
     }
 }
 
